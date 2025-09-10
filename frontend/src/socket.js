@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const SERVER_URL = "http://localhost:8080";
+const SERVER_URL = "https://whiteboardshare.onrender.com";
 
 export const socket = io(SERVER_URL, {
   reconnectionAttempts: "Infinity",
