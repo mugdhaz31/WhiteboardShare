@@ -47,23 +47,18 @@ const Canvas = forwardRef(({
         context.moveTo(points[0].x, points[0].y);
         points.forEach(p => context.lineTo(p.x, p.y));
         context.stroke();
-      }
-
-      else if (type === "line") {
+      } else if (type === "line") {
         rc.current.line(points[0].x, points[0].y, points[1].x, points[1].y, {
           stroke: color,
           strokeWidth: size,
         });
-      }
-
-      else if (type === "rectangle") {
+      } else if (type === "rectangle") {
         const x = points[0].x;
         const y = points[0].y;
         const width = points[1].x - x;
         const height = points[1].y - y;
 
         if (fill) {
-          context.fillStyle = color;
           context.fillRect(x, y, width, height);
         } else {
           rc.current.rectangle(x, y, width, height, {
@@ -71,9 +66,7 @@ const Canvas = forwardRef(({
             strokeWidth: size,
           });
         }
-      }
-
-      else if (type === "circle") {
+      } else if (type === "circle") {
         const x1 = points[0].x;
         const y1 = points[0].y;
         const x2 = points[1].x;
@@ -82,22 +75,30 @@ const Canvas = forwardRef(({
 
         context.beginPath();
         context.arc(x1, y1, radius, 0, 2 * Math.PI);
-        if (fill) {
-          context.fillStyle = color;
-          context.fill();
-        } else {
-          context.strokeStyle = color;
-          context.lineWidth = size;
-          context.stroke();
-        }
+        if (fill) context.fill();
+        else context.stroke();
       }
     });
   };
 
-  const startDrawing = ({ nativeEvent }) => {
-    if (!user || !user.host) return;
-    const { offsetX, offsetY } = nativeEvent;
+  const getEventCoordinates = (e) => {
+    if (e.touches) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      return {
+        offsetX: e.touches[0].clientX - rect.left,
+        offsetY: e.touches[0].clientY - rect.top
+      };
+    } else {
+      return { offsetX: e.nativeEvent.offsetX, offsetY: e.nativeEvent.offsetY };
+    }
+  };
+
+  const startDrawing = (e) => {
+    if (!user?.host) return;
+    e.preventDefault();
+    const { offsetX, offsetY } = getEventCoordinates(e);
     setDrawing(true);
+
     let newEl;
     if (tool === "pencil" || tool === "brush") {
       newEl = { type: tool, points: [{ x: offsetX, y: offsetY }], color, size: brushSize, fill };
@@ -108,9 +109,10 @@ const Canvas = forwardRef(({
     setCurrentElement(newEl);
   };
 
-  const draw = ({ nativeEvent }) => {
+  const draw = (e) => {
     if (!drawing || !currentElement || !user?.host) return;
-    const { offsetX, offsetY } = nativeEvent;
+    e.preventDefault();
+    const { offsetX, offsetY } = getEventCoordinates(e);
 
     if (tool === "pencil" || tool === "brush") {
       setCurrentElement(prev => ({ ...prev, points: [...prev.points, { x: offsetX, y: offsetY }] }));
@@ -119,11 +121,12 @@ const Canvas = forwardRef(({
     }
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (e) => {
     if (!user?.host) return;
+    e?.preventDefault();
     if (currentElement) {
       setElements(prev => [...prev, currentElement]);
-      socket.emit("drawing", { roomCode, element: currentElement }); // send to server
+      socket.emit("drawing", { roomCode, element: currentElement });
       setCurrentElement(null);
       setRedoElements([]);
     }
@@ -137,14 +140,13 @@ const Canvas = forwardRef(({
     return () => socket.off("receiveDrawing");
   }, []);
 
-  // Cursor
   const getCursor = () => {
     if (!user?.host) return "not-allowed";
     switch (tool) {
       case "pencil":
-        return "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDEyIDEyLDAgMCAwIiBzdHJva2U9ImJsYWNrIiBmaWxsPSJibGFjayIvPjwvc3ZnPg==') 0 12, auto";
+        return "crosshair";
       case "brush":
-        return "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyIiBoZWlnaHQ9IjMiIGZpbGw9ImJsYWNrIi8+PC9zdmc+') 0 12, auto";
+        return "crosshair";
       default:
         return "crosshair";
     }
@@ -163,6 +165,9 @@ const Canvas = forwardRef(({
       onMouseMove={draw}
       onMouseUp={stopDrawing}
       onMouseLeave={stopDrawing}
+      onTouchStart={startDrawing}
+      onTouchMove={draw}
+      onTouchEnd={stopDrawing}
     />
   );
 });
