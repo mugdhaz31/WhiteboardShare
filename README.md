@@ -27,21 +27,6 @@ It allows users to **draw**, **undo/redo**, **clear the canvas**, **download dra
 | State Management| React useState/useEffect         |
 | Others          | HTML Canvas API                  |
 
----
-
-## 📹 Video Demonstration
-
-### Creating Room
-[Watch Video](videos/Screen Recording 2025-09-10 134934.mp4)
-
-### Joining Room
-[Watch Video](videos/Screen Recording 2025-09-10 135127.mp4)
-
-### Real-Time Chatting
-[Watch Video](videos/Screen Recording 2025-09-10 135238.mp4)
-
----
-
 ## 🧾 Installation & Setup
 
 1. **Clone the repository**
