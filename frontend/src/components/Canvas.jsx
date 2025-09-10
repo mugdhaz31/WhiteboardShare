@@ -1,0 +1,170 @@
+import React, { useRef, useEffect, forwardRef } from "react";
+import rough from "roughjs/bin/rough";
+import { socket } from "../socket";
+
+const Canvas = forwardRef(({
+  tool,
+  color,
+  brushSize,
+  fill,
+  elements,
+  setElements,
+  currentElement,
+  setCurrentElement,
+  redoElements,
+  setRedoElements,
+  drawing,
+  setDrawing,
+  user, roomCode
+}, ref) => {
+  const canvasRef = useRef(null);
+  const rc = useRef(null);
+
+  // Initialize canvas & redraw
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    rc.current = rough.canvas(canvas);
+    drawElements();
+  }, [elements, currentElement]);
+
+  const drawElements = () => {
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    const allElements = currentElement ? [...elements, currentElement] : elements;
+
+    allElements.forEach(el => {
+      const { type, points, color, size, fill } = el;
+      context.strokeStyle = color;
+      context.lineWidth = size;
+      context.fillStyle = color;
+
+      if (type === "pencil" || type === "brush") {
+        context.beginPath();
+        context.moveTo(points[0].x, points[0].y);
+        points.forEach(p => context.lineTo(p.x, p.y));
+        context.stroke();
+      }
+
+      else if (type === "line") {
+        rc.current.line(points[0].x, points[0].y, points[1].x, points[1].y, {
+          stroke: color,
+          strokeWidth: size,
+        });
+      }
+
+      else if (type === "rectangle") {
+        const x = points[0].x;
+        const y = points[0].y;
+        const width = points[1].x - x;
+        const height = points[1].y - y;
+
+        if (fill) {
+          context.fillStyle = color;
+          context.fillRect(x, y, width, height);
+        } else {
+          rc.current.rectangle(x, y, width, height, {
+            stroke: color,
+            strokeWidth: size,
+          });
+        }
+      }
+
+      else if (type === "circle") {
+        const x1 = points[0].x;
+        const y1 = points[0].y;
+        const x2 = points[1].x;
+        const y2 = points[1].y;
+        const radius = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+        context.beginPath();
+        context.arc(x1, y1, radius, 0, 2 * Math.PI);
+        if (fill) {
+          context.fillStyle = color;
+          context.fill();
+        } else {
+          context.strokeStyle = color;
+          context.lineWidth = size;
+          context.stroke();
+        }
+      }
+    });
+  };
+
+  const startDrawing = ({ nativeEvent }) => {
+    if (!user || !user.host) return;
+    const { offsetX, offsetY } = nativeEvent;
+    setDrawing(true);
+    let newEl;
+    if (tool === "pencil" || tool === "brush") {
+      newEl = { type: tool, points: [{ x: offsetX, y: offsetY }], color, size: brushSize, fill };
+    } else {
+      newEl = { type: tool, points: [{ x: offsetX, y: offsetY }, { x: offsetX, y: offsetY }], color, size: brushSize, fill };
+    }
+
+    setCurrentElement(newEl);
+  };
+
+  const draw = ({ nativeEvent }) => {
+    if (!drawing || !currentElement || !user?.host) return;
+    const { offsetX, offsetY } = nativeEvent;
+
+    if (tool === "pencil" || tool === "brush") {
+      setCurrentElement(prev => ({ ...prev, points: [...prev.points, { x: offsetX, y: offsetY }] }));
+    } else {
+      setCurrentElement(prev => ({ ...prev, points: [prev.points[0], { x: offsetX, y: offsetY }] }));
+    }
+  };
+
+  const stopDrawing = () => {
+    if (!user?.host) return;
+    if (currentElement) {
+      setElements(prev => [...prev, currentElement]);
+      socket.emit("drawing", { roomCode, element: currentElement }); // send to server
+      setCurrentElement(null);
+      setRedoElements([]);
+    }
+    setDrawing(false);
+  };
+
+  useEffect(() => {
+    socket.on("receiveDrawing", (element) => {
+      setElements(prev => [...prev, element]);
+    });
+    return () => socket.off("receiveDrawing");
+  }, []);
+
+  // Cursor
+  const getCursor = () => {
+    if (!user?.host) return "not-allowed";
+    switch (tool) {
+      case "pencil":
+        return "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBvbHlnb24gcG9pbnRzPSIwLDEyIDEyLDAgMCAwIiBzdHJva2U9ImJsYWNrIiBmaWxsPSJibGFjayIvPjwvc3ZnPg==') 0 12, auto";
+      case "brush":
+        return "url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEyIiBoZWlnaHQ9IjMiIGZpbGw9ImJsYWNrIi8+PC9zdmc+') 0 12, auto";
+      default:
+        return "crosshair";
+    }
+  };
+
+  return (
+    <canvas
+      ref={(node) => {
+        canvasRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      }}
+      style={{ cursor: getCursor() }}
+      className="bg-white border-2 border-dashed border-gray-300 rounded-2xl shadow-lg w-[90%] h-[70vh]"
+      onMouseDown={startDrawing}
+      onMouseMove={draw}
+      onMouseUp={stopDrawing}
+      onMouseLeave={stopDrawing}
+    />
+  );
+});
+
+export default Canvas;
