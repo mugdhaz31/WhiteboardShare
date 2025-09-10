@@ -1,6 +1,6 @@
-# 🖌️ Whitebboard Share – Real-Time Collaborative Whiteboard with Chat
+# 🖌️ Whiteboard Share – Real-Time Collaborative Whiteboard with Chat
 
- Whitebboard Share is a real-time collaborative whiteboard web application built with **React**, **Node.js**, **Express**, and **Socket.io**.  
+Whiteboard Share is a real-time collaborative whiteboard web application built with **React**, **Node.js**, **Express**, and **Socket.io**.  
 It allows users to **draw**, **undo/redo**, **clear the canvas**, **download drawings**, and **chat in real-time** within a shared room.
 
 ---
@@ -20,28 +20,26 @@ It allows users to **draw**, **undo/redo**, **clear the canvas**, **download dra
 
 ## 🛠 Tech Stack
 
-| Category      | Technology                  |
-|---------------|-----------------------------|
-| Frontend      | React, Tailwind CSS, Rough.js, React Router |
-| Backend       | Node.js, Express.js, Socket.io |
-| State Management | React useState/useEffect  |
-| Others        | HTML Canvas API            |
+| Category        | Technology                        |
+|-----------------|----------------------------------|
+| Frontend        | React, Tailwind CSS, Rough.js, React Router |
+| Backend         | Node.js, Express.js, Socket.io   |
+| State Management| React useState/useEffect         |
+| Others          | HTML Canvas API                  |
 
 ---
 
-## 📸 Screenshots
+## 📹 Video Demonstration
 
-## Creating Room 
+### Creating Room
+[Watch Video](videos/Screen Recording 2025-09-10 134934.mp4)
 
-<video controls src="Screen Recording 2025-09-10 134934.mp4" title="Title"></video>
+### Joining Room
+[Watch Video](videos/Screen Recording 2025-09-10 135127.mp4)
 
-## Joining Room
+### Real-Time Chatting
+[Watch Video](videos/Screen Recording 2025-09-10 135238.mp4)
 
-<video controls src="Screen Recording 2025-09-10 135127.mp4" title="Title"></video>
-
-## Real time Chatting
-
-<video controls src="Screen Recording 2025-09-10 135238.mp4" title="Title"></video>
 ---
 
 ## 🧾 Installation & Setup
@@ -49,7 +47,8 @@ It allows users to **draw**, **undo/redo**, **clear the canvas**, **download dra
 1. **Clone the repository**
    ```bash
    git clone https://github.com/your-username/WhiteboardShare.git
-   cd White-board
+   cd WhiteboardShare
+
 2. **Install frontend dependencies**
    ```bash
    cd frontend
