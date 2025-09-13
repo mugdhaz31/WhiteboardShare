@@ -20,17 +20,39 @@ const Canvas = forwardRef(({
   const canvasRef = useRef(null);
   const rc = useRef(null);
 
-  // Initialize canvas & redraw
+  // Initialize canvas & redraw, also handle resizing
   useEffect(() => {
     const canvas = canvasRef.current;
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    rc.current = rough.canvas(canvas);
-    drawElements();
+    if (!canvas) return;
+
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+
+      const context = canvas.getContext("2d");
+      context.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+      rc.current = rough.canvas(canvas);
+      drawElements();
+    };
+
+    resizeCanvas();
+
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("orientationchange", resizeCanvas);
+
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("orientationchange", resizeCanvas);
+    };
   }, [elements, currentElement]);
 
   const drawElements = () => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const context = canvas.getContext("2d");
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -132,26 +154,25 @@ const Canvas = forwardRef(({
     }
     setDrawing(false);
   };
+
   useEffect(() => {
-  const canvas = canvasRef.current;
-  if (!canvas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const handleTouchStart = (e) => startDrawing(e);
-  const handleTouchMove = (e) => draw(e);
-  const handleTouchEnd = (e) => stopDrawing(e);
+    const handleTouchStart = (e) => startDrawing(e);
+    const handleTouchMove = (e) => draw(e);
+    const handleTouchEnd = (e) => stopDrawing(e);
 
-  // Attach with passive: false
-  canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
-  canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
-  canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
 
-  return () => {
-    canvas.removeEventListener("touchstart", handleTouchStart);
-    canvas.removeEventListener("touchmove", handleTouchMove);
-    canvas.removeEventListener("touchend", handleTouchEnd);
-  };
-}, [startDrawing, draw, stopDrawing]);
-
+    return () => {
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [startDrawing, draw, stopDrawing]);
 
   useEffect(() => {
     socket.on("receiveDrawing", (element) => {
@@ -162,14 +183,7 @@ const Canvas = forwardRef(({
 
   const getCursor = () => {
     if (!user?.host) return "not-allowed";
-    switch (tool) {
-      case "pencil":
-        return "crosshair";
-      case "brush":
-        return "crosshair";
-      default:
-        return "crosshair";
-    }
+    return "crosshair";
   };
 
   return (
