@@ -42,25 +42,25 @@ function App() {
 
     const handleNewUser = (data) => {
       console.log("A new user joined the room:", data.name)
-      setUsers(data.users || [])
+      setUsers((prev) => [...prev, data])
+    }
+
+    const handleAllUsers = (data) => {
+      setUsers(data || [])
     }
 
     const handleJoinedMessage = (data) => {
-      toast.info(`${data.user.name} joined the room`, {
+      toast.info(`${data.name} joined the room`, {
         position: "top-right",
         autoClose: 3500,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
         transition: Slide,
-        className: "custom-toast",
-        bodyClassName: "custom-toast-body",
-        progressClassName: "custom-toast-progress",
       })
     }
 
     const handleUserDisconnected = (name) => {
-      console.log(`${name} left the room`)
       toast.info(`${name} left the room`, {
         position: "top-right",
         autoClose: 3500,
@@ -68,24 +68,31 @@ function App() {
         pauseOnHover: true,
         draggable: true,
         transition: Slide,
-        className: "custom-toast",
-        bodyClassName: "custom-toast-body",
-        progressClassName: "custom-toast-progress",
       })
     }
 
-    socket.on("userIsJoined", handleJoined)
-    socket.on("newUserJoined", handleNewUser)
-    socket.on("allUsers", (data) => setUsers(data || []))
-    socket.on("userJoinedMessageroadcasted", handleJoinedMessage)
-    socket.on("userDisconnected", handleUserDisconnected)
+    // First remove any old listeners before adding new ones
+    socket.off("userIsJoined", handleJoined);
+    socket.on("userIsJoined", handleJoined);
+
+    socket.off("newUserJoined", handleNewUser);
+    socket.on("newUserJoined", handleNewUser);
+
+    socket.off("allUsers", handleAllUsers);
+    socket.on("allUsers", handleAllUsers);
+
+    socket.off("userJoinedMessage", handleJoinedMessage);
+    socket.on("userJoinedMessage", handleJoinedMessage);
+
+    socket.off("userDisconnected", handleUserDisconnected);
+    socket.on("userDisconnected", handleUserDisconnected);
 
     return () => {
-      socket.off("userIsJoined", handleJoined)
-      socket.off("newUserJoined", handleNewUser)
-      socket.off("allUsers")
-      socket.off("userJoinedMessageroadcasted", handleJoinedMessage)
-      socket.off("userDisconnected", handleUserDisconnected)
+      socket.off("userIsJoined", handleJoined);
+      socket.off("newUserJoined", handleNewUser);
+      socket.off("allUsers", handleAllUsers);
+      socket.off("userJoinedMessage", handleJoinedMessage);
+      socket.off("userDisconnected", handleUserDisconnected);
     }
   }, [])
 
@@ -113,4 +120,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

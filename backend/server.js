@@ -15,83 +15,43 @@ const io = new Server(server, {
 
 app.use(express.json());
 
-// Basic route
-// app.get("/", (req, res) => {
-//   res.send("Hello from Express!");
-// });
-
-// Socket connection
 io.on("connection", (socket) => {
-
-  // When a user joins a room
   socket.on("userJoined", (data) => {
-  const { name, roomCode, userId, host, presenter } = data;
-  socket.join(roomCode);
+    const { name, roomCode, userId, host, presenter } = data;
+    socket.join(roomCode);
 
-  const users = addUser({ name, roomCode, userId, host, presenter, socketId: socket.id });
+    const users = addUser({ name, roomCode, userId, host, presenter, socketId: socket.id });
 
-  io.to(roomCode).emit("allUsers", users);
-  io.to(roomCode).emit("userJoinedMessage", { name });
+    io.to(roomCode).emit("allUsers", users);
+    io.to(roomCode).emit("userJoinedMessage", { name });
 
-  socket.emit("userIsJoined", { success: true, users });
-});
+    socket.emit("userIsJoined", { success: true, users });
+  });
 
-socket.on("drawing", ({ roomCode, element }) => {
-  io.to(roomCode).emit("receiveDrawing", element);
-});
-
-socket.on("sendChatMessage", ({ roomCode, user, message, timestamp }) => {
-  io.to(roomCode).emit("receiveChatMessage", { user, message, timestamp });
-});
-
-
-  // Drawing event
   socket.on("drawing", ({ roomCode, element }) => {
-    try {
-      socket.to(roomCode).emit("receiveDrawing", element);
-    } catch (err) {
-      console.error("Error in drawing:", err);
-      socket.emit("error", { message: "Failed to send drawing", details: err.message });
-    }
+    socket.to(roomCode).emit("receiveDrawing", element);
   });
 
-  // Update elements (undo/redo/clear)
   socket.on("updateElements", ({ roomCode, elements }) => {
-    try {
-      socket.to(roomCode).emit("receiveElements", elements);
-    } catch (err) {
-      console.error("Error in updateElements:", err);
-      socket.emit("error", { message: "Failed to update elements", details: err.message });
-    }
+    socket.to(roomCode).emit("receiveElements", elements);
   });
 
-  // Chat messages
   socket.on("sendChatMessage", ({ roomCode, user, message, timestamp }) => {
-    try {
-      socket.to(roomCode).emit("receiveChatMessage", { user, message, timestamp });
-      socket.to(roomCode).emit("newMessageNotification", { sender: user });
-    } catch (err) {
-      console.error("Error in sendChatMessage:", err);
-      socket.emit("error", { message: "Failed to send chat message", details: err.message });
-    }
+     console.log("Emitting message to room:", roomCode);
+    io.to(roomCode).emit("receiveChatMessage", { user, message, timestamp });
+  // socket.to(roomCode).emit("newMessageNotification", { sender: user });
   });
 
-  // Handle user disconnecting
   socket.on("disconnect", () => {
-    try {
-      const user = getUser(socket.id);
-      if (user) {
-        removeUser(socket.id);
-        const usersInRoom = getUserInRoom(user.roomCode);
-        socket.broadcast.to(user.roomCode).emit("userDisconnected", user.name);
-        socket.broadcast.to(user.roomCode).emit("allUsers", usersInRoom);
-      }
-    } catch (err) {
-      console.error("Error during disconnect:", err);
+    const user = getUser(socket.id);
+    if (user) {
+      removeUser(socket.id);
+      const usersInRoom = getUserInRoom(user.roomCode);
+      socket.broadcast.to(user.roomCode).emit("userDisconnected", user.name);
+      socket.broadcast.to(user.roomCode).emit("allUsers", usersInRoom);
     }
   });
 
-  // Global error handler for unexpected socket errors
   socket.on("error", (err) => {
     console.error("Socket error:", err);
   });

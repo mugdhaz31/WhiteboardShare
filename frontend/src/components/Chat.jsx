@@ -13,32 +13,67 @@ const Chat = ({ user, roomCode }) => {
     showChatRef.current = showChat;
   }, [showChat]);
 
-  useEffect(() => {
-    socket.on("receiveChatMessage", (msg) => {
-      const parsedMsg = {
-        ...msg,
-        timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
-      };
-      setMessages((prev) => [...prev, parsedMsg]);
-    });
-    socket.on("newMessageNotification", ({ sender }) => {
-      if (!showChatRef.current && sender !== user.name) {
-        toast.info(`New message from ${sender.name}`, {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }
-    });
+  // useEffect(() => {
+  //   // ✅ Define handler functions here to ensure unique references for each component
+  //   const handleReceiveMessage = (msg) => {
+  //     const parsedMsg = {
+  //       ...msg,
+  //       timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+  //     };
+  //     setMessages((prev) => [...prev, parsedMsg]);
+  //   };
 
-    return () => {
-      socket.off("receiveChatMessage");
-      socket.off("newMessageNotification");
+  //   const handleNewMessageNotification = ({ sender }) => {
+  //     if (!showChatRef.current && sender.name !== user.name) {
+  //       toast.info(`New message from ${sender.name}`, {
+  //         position: "top-right",
+  //         autoClose: 3000,
+  //         hideProgressBar: false,
+  //         closeOnClick: true,
+  //         pauseOnHover: true,
+  //         draggable: true,
+  //       });
+  //     }
+  //   };
+
+  //   // ✅ Register listeners for this instance
+  //   socket.on("receiveChatMessage", handleReceiveMessage);
+  //   socket.on("newMessageNotification", handleNewMessageNotification);
+
+  //   // ✅ Cleanup listeners on unmount
+  //   return () => {
+  //     socket.off("receiveChatMessage", handleReceiveMessage);
+  //     socket.off("newMessageNotification", handleNewMessageNotification);
+  //   };
+  // }, [user.name]); // ✅ depend on user.name if it may change
+  useEffect(() => {
+  const handleReceiveMessage = (msg) => {
+    console.log("Received message:", msg);
+    const parsedMsg = {
+      ...msg,
+      timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
     };
-  }, []); 
+    setMessages((prev) => [...prev, parsedMsg]);
+
+    if (!showChatRef.current && msg.user.name !== user.name) {
+      toast.info(`New message from ${msg.user.name}`, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+  };
+
+  socket.on("receiveChatMessage", handleReceiveMessage);
+
+  return () => {
+    socket.off("receiveChatMessage", handleReceiveMessage);
+  };
+}, [user.name]);
+
 
   const sendMessage = () => {
     if (!newMessage.trim()) return;
@@ -51,7 +86,6 @@ const Chat = ({ user, roomCode }) => {
     };
 
     socket.emit("sendChatMessage", messageData);
-    setMessages((prev) => [...prev, { ...messageData, timestamp: new Date() }]);
     setNewMessage("");
   };
 
@@ -71,9 +105,7 @@ const Chat = ({ user, roomCode }) => {
       )}
 
       <div
-        className={`fixed left-0 top-0 h-full w-80 bg-white shadow-xl border-r border-gray-300 flex flex-col z-40 transition-transform ${
-          showChat ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed left-0 top-0 h-full w-80 bg-white shadow-xl border-r border-gray-300 flex flex-col z-40 transition-transform ${showChat ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex justify-between items-center bg-gray-100 px-4 py-3 border-b border-gray-300">
           <h3 className="font-semibold text-black">Chat</h3>
