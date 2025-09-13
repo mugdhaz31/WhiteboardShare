@@ -32,7 +32,8 @@ const CreateRoom = ({socket, setUser}) => {
             name,
             roomCode,
             host: true,
-            presenter: true
+            presenter: true,
+            userId: uuidv4(),
         }
         setUser(roomData)
         navigate(`/${roomCode}`, { state: { username: name } });

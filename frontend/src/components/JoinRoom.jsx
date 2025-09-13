@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from 'uuid';
 
 const JoinRoom = ({socket , setUser}) => {
     const [roomCode, setRoomCode] = useState("");
@@ -21,12 +22,13 @@ const JoinRoom = ({socket , setUser}) => {
       roomCode,
       host: false,
       presenter: false,
+      userId: uuidv4(),
     };
 
     setUser(userData);
     console.log("Emitting user joined", userData);
-    navigate(`/${roomCode}`, { state: { username: name } });
     socket.emit("userJoined", userData);
+    navigate(`/${roomCode}`, { state: { username: name } });
 
   };
     return (

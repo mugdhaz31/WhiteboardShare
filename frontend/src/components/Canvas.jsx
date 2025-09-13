@@ -132,6 +132,26 @@ const Canvas = forwardRef(({
     }
     setDrawing(false);
   };
+  useEffect(() => {
+  const canvas = canvasRef.current;
+  if (!canvas) return;
+
+  const handleTouchStart = (e) => startDrawing(e);
+  const handleTouchMove = (e) => draw(e);
+  const handleTouchEnd = (e) => stopDrawing(e);
+
+  // Attach with passive: false
+  canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+  canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+  canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+  return () => {
+    canvas.removeEventListener("touchstart", handleTouchStart);
+    canvas.removeEventListener("touchmove", handleTouchMove);
+    canvas.removeEventListener("touchend", handleTouchEnd);
+  };
+}, [startDrawing, draw, stopDrawing]);
+
 
   useEffect(() => {
     socket.on("receiveDrawing", (element) => {
@@ -165,9 +185,6 @@ const Canvas = forwardRef(({
       onMouseMove={draw}
       onMouseUp={stopDrawing}
       onMouseLeave={stopDrawing}
-      onTouchStart={startDrawing}
-      onTouchMove={draw}
-      onTouchEnd={stopDrawing}
     />
   );
 });

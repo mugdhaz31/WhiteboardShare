@@ -23,7 +23,7 @@ const Chat = ({ user, roomCode }) => {
     });
     socket.on("newMessageNotification", ({ sender }) => {
       if (!showChatRef.current && sender !== user.name) {
-        toast.info(`New message from ${sender}`, {
+        toast.info(`New message from ${sender.name}`, {
           position: "top-right",
           autoClose: 3000,
           hideProgressBar: false,
@@ -44,7 +44,7 @@ const Chat = ({ user, roomCode }) => {
     if (!newMessage.trim()) return;
 
     const messageData = {
-      user: user.name,
+      user: { name: user.name },
       message: newMessage,
       timestamp: new Date().toISOString(),
       roomCode,
@@ -82,11 +82,11 @@ const Chat = ({ user, roomCode }) => {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {messages.map((msg, idx) => (
-            <div key={idx} className={`flex flex-col ${msg.user === user.name ? "items-end" : "items-start"}`}>
-              <div className={`px-3 py-1 rounded-lg max-w-xs break-words ${msg.user === user.name ? "bg-gray-800 text-white" : "bg-gray-200 text-black"}`}>
+            <div key={idx} className={`flex flex-col ${msg.user.name === user.name ? "items-end" : "items-start"}`}>
+              <div className={`px-3 py-1 rounded-lg max-w-xs break-words ${msg.user.name === user.name ? "bg-gray-800 text-white" : "bg-gray-200 text-black"}`}>
                 {msg.message}
               </div>
-              <span className="text-xs text-gray-500 mt-1">{msg.user} • {msg.timestamp.toLocaleTimeString()}</span>
+              <span className="text-xs text-gray-500 mt-1">{msg.user.name} • {msg.timestamp.toLocaleTimeString()}</span>
             </div>
           ))}
           <div ref={messagesEndRef} />
