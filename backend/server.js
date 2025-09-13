@@ -25,32 +25,25 @@ io.on("connection", (socket) => {
 
   // When a user joins a room
   socket.on("userJoined", (data) => {
-    try {
-      const { name, roomCode, userId, host, presenter } = data;
+  const { name, roomCode, userId, host, presenter } = data;
+  socket.join(roomCode);
 
-      // Prevent duplicate join
-      const existingUser = getUserInRoom(roomCode).find(u => u.userId === userId);
-      if (existingUser) {
-        socket.emit("error", { message: "User already in room" });
-        return;
-      }
+  const users = addUser({ name, roomCode, userId, host, presenter, socketId: socket.id });
 
-      socket.join(roomCode);
+  io.to(roomCode).emit("allUsers", users);
+  io.to(roomCode).emit("userJoinedMessage", { name });
 
-      const users = addUser({ name, roomCode, userId, host, presenter, socketId: socket.id });
+  socket.emit("userIsJoined", { success: true, users });
+});
 
-      // Notify others
-      socket.broadcast.to(roomCode).emit("userJoinedMessageroadcasted", { user: { name } });
-      io.to(roomCode).emit("allUsers", users);
+socket.on("drawing", ({ roomCode, element }) => {
+  io.to(roomCode).emit("receiveDrawing", element);
+});
 
-      // Notify new user individually
-      socket.emit("userIsJoined", { success: true, users });
+socket.on("sendChatMessage", ({ roomCode, user, message, timestamp }) => {
+  io.to(roomCode).emit("receiveChatMessage", { user, message, timestamp });
+});
 
-    } catch (err) {
-      console.error("Error in userJoined:", err);
-      socket.emit("error", { message: "Failed to join room", details: err.message });
-    }
-  });
 
   // Drawing event
   socket.on("drawing", ({ roomCode, element }) => {
